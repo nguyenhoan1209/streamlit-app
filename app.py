@@ -11,12 +11,78 @@ import scipy.stats as stats
 from scipy.stats import t
 
 
-st.set_page_config("DataApp","📊")
+st.set_page_config("DataApp","📊",layout="wide",initial_sidebar_state="expanded",)
 
 container = st.container()
-col1,col2 = st.columns(2)
+
+def footer():
+    st.markdown(
+        """
+        <head>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        </head>
+        <style>
+            footer
+            {
+            visibility:hidden;
+            }
+            .a {
+                
+                background-color: #f0f2f6;
+                padding: 20px;
+                text-align: center;
+            }
+            
+            .icon-list {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .icon-list-item {
+                margin: 10px;
+                text-align: center;
+                cursor: pointer;
+            }
+
+            .icon-list-item i {
+                display: block;
+                font-size: 20px;
+                color: black;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+    """
+        <div class="a">
+            <h6>Liên hệ với tôi</h6>
+            <div class="icon-list">
+                <div class="icon-list-item">
+                    <a href="https://github.com" target="_blank">
+                        <i class="fab fa-github"></i>
+                    </a>
+                </div>
+                <div class="icon-list-item">
+                    <a href="https://twitter.com" target="_blank">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                </div>
+                <div class="icon-list-item">
+                    <a href="https://youtube.com" target="_blank">
+                        <i class="fab fa-youtube"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+)
 
 
+    
 
 @st.cache_data
 def load_data(file):
@@ -72,6 +138,12 @@ def info(data):
     container.write("Dữ liệu")
     filtered_df = dataframe_explorer(data, case=False)
     container.dataframe(filtered_df, use_container_width=True)
+    st.download_button(
+            label="Download filter data",
+            data=filtered_df.to_csv(index=False),
+            file_name='data_filter.csv',
+            mime='text/csv',
+            )
     container.markdown("---")
 
     container.write("#### Thông tin ####")
@@ -113,7 +185,9 @@ def info(data):
             file_name='data_clean.csv',
             mime='text/csv',
             )
-    image = Image.open("sami.jpg")
+        container.markdown("---")
+    footer()
+    image = Image.open("image/sami.jpg")
     with st.sidebar:
         st.sidebar.image(image,width = 50)
         st.sidebar.markdown("# Data #")
@@ -123,7 +197,7 @@ def info(data):
         st.sidebar.markdown("- Missing Value")
 
 
-       
+### analyze_data      
 def analyze_data(data):
     # Perform basic data analysis
     container.write(" # Data Analysis # ")
@@ -139,11 +213,23 @@ def analyze_data(data):
     if use_sample_stats:
     # compute and show the sample statistics
         container.dataframe(summary(data),use_container_width=True)
+        container.download_button(
+        label="Download data as CSV",
+        data=summary(data).to_csv(index=False),
+        file_name='data_analyze.csv',
+        mime='text/csv')
    
     else:
     # compute and show the population statistics
         container.dataframe(summary_p(data),use_container_width=True)
+        container.download_button(
+        label="Download data as CSV",
+        data=summary_p(data).to_csv(index=False),
+        file_name='data_analyze.csv',
+        mime='text/csv')
     
+
+    container.markdown("---")
     container.markdown("###### Giá trị trung bình (Mean) ######")
     container.markdown("Giá trị trung bình, hay còn gọi là kỳ vọng, là một khái niệm thống kê dùng để đo độ trung tâm của một tập dữ liệu. Nó được tính bằng cách lấy tổng của tất cả các giá trị trong tập dữ liệu và chia cho số lượng các giá trị đó.")
     container.latex(r'''
@@ -152,23 +238,22 @@ def analyze_data(data):
 
     input1 = st.text_input("Ví dụ giá trị trung bình:",placeholder="Vd:1,2,4,2,5")
 
-# Convert input to list of values
+
     values = input1.split(',')
 
-# Convert non-empty values to numeric
+
     numeric_values = []
     for value in values:
         value = value.strip()
         if value:
             numeric_values.append(float(value))
 
-# Create a Pandas Series
+
     series1 = pd.Series(numeric_values)
 
-# Calculate the mean
+
     series1_mean = series1.mean()
 
-# Display the mean with green text color
     if input1:
         container.markdown(f"Giá trị trung bình của dãy: <span style='color:green;'>{series1_mean}</span>", unsafe_allow_html=True)
     container.markdown("---")
@@ -235,24 +320,36 @@ def analyze_data(data):
     container.markdown("Skewness (độ lệch) là một độ đo thống kê được sử dụng để đo mức độ bất đối xứng của phân phối dữ liệu. Nó đo sự chệch lệch của phân phối dữ liệu so với phân phối chuẩn hoặc phân phối đối xứng")
     container.markdown("Nếu phân phối dữ liệu lệch sang phải (có đuôi phân phối dài hơn bên phải so với bên trái), thì giá trị skewness sẽ là số dương. Ngược lại, nếu phân phối dữ liệu lệch sang trái (có đuôi phân phối dài hơn bên trái so với bên phải), thì giá trị skewness sẽ là số âm. Nếu phân phối dữ liệu đối xứng, thì skewness sẽ bằng 0.")
     container.latex(r'''
-    \operatorname{S} = \sqrt{n}*\frac{\sum_{i=1}^N (x_i - \mu)^3}{\left(\sum_{i=1}^N (x_i - \mu)^2\right)^{3/2}}
+    \operatorname{S} = \sqrt{n}\frac{\sum_{i=1}^N (x_i - \mu)^3}{\left(\sum_{i=1}^N (x_i - \mu)^2\right)^{3/2}}
     ''')
     container.markdown("Trong trường hợp muốn tính độ lệch skewness mẫu hiệu chỉnh ")
     container.latex(r'''
-    \operatorname{S} = \frac{n\sqrt{n-1}}{n-2}*\frac{\sum_{i=1}^N (x_i - \mu)^3}{\left(\sum_{i=1}^N (x_i - \mu)^2\right)^{3/2}}
+    \operatorname{S} = \frac{n\sqrt{n-1}}{n-2}\frac{\sum_{i=1}^N (x_i - \mu)^3}{\left(\sum_{i=1}^N (x_i - \mu)^2\right)^{3/2}}
     ''')
+    input4 = st.text_input("Ví dụ skewness:",placeholder="Vd:1,2,4,2,5")
+    values4 = input4.split(',')
+    numeric_values4 = []
+    for value4 in values4:
+        value4 = value4.strip()
+        if value4:
+            numeric_values4.append(float(value4))
+    series4 = pd.Series(numeric_values4)
+    skewness = series4.skew()
+    if input4:
+        container.markdown(f"Giá trị skewness: <span style='color:green;'>{skewness}</span>", unsafe_allow_html=True)
+
     container.markdown("---")
     
     container.write("#### Đặc trưng thống kê mẫu nhiều chiều ####")
     container.markdown(
                 """
                 <style>
-                .a {
+                .c {
                     margin-top: 30px ;
                     }
                 </style>
 
-                <div class="a"></div>
+                <div class="c"></div>
                 """,
                 unsafe_allow_html=True
             )
@@ -284,9 +381,39 @@ def analyze_data(data):
     container.latex(r'''
     r_{XY} = \frac{\operatorname{cov}(X,Y)}{\sigma_X \sigma_Y}
     ''')
-    container.markdown("---")
+    container.markdown("ví dụ hiệp phương sai và hệ số tương quan: ")
+    col1, col2 =st.columns(2)
+    with col1:
+        input5 = st.text_input("Input 1:", placeholder="Example: 1,2,3,4,5")
+    with col2:
+        input6 = st.text_input("Input 2:", placeholder="Example: 2,4,6,8,10")
+    values5 = input5.split(',')
+    numeric_values5 = []
+    for value5 in values5:
+        value5 = value5.strip()
+        if value5:
+            numeric_values5.append(float(value5))
     
-    image = Image.open("sami.jpg")
+    values6 = input6.split(',')
+    numeric_values6 = []
+    for value6 in values6:
+        value6 = value6.strip()
+        if value6:
+            numeric_values6.append(float(value6))
+    
+    series5 = pd.Series(numeric_values5)
+    series6 = pd.Series(numeric_values6)
+    
+    covariance = series5.cov(series6)
+    correlation = series5.corr(series6)
+    
+    if input5 and input6:
+        st.markdown(f"Giá trị hiệp phương sai: <span style='color:green;'>{covariance}</span>", unsafe_allow_html=True)
+        st.markdown(f"Giá trị hệ số tương quan: <span style='color:green;'>{correlation}</span>", unsafe_allow_html=True)
+
+    container.markdown("---")
+    footer()
+    image = Image.open("image/sami.jpg")
     with st.sidebar:
         st.sidebar.image(image,width = 50)
         st.sidebar.markdown("# Thống kê #")
@@ -305,35 +432,42 @@ def analyze_data(data):
         """
         st.sidebar.markdown(mark_down_text)
 
-# Data viusualyzation
+#### Data viusualyzation
 def create_chart(chart_type, data):
+    col1,col2 = st.columns(2)
     if chart_type == "Bar":
-    
+        
         st.header("Bar Chart")
-        x_column = st.selectbox("Chọn trục X", data.columns)
-
-        y_column = st.selectbox("Chọn trục Y", data.columns)
+        with col1:
+            x_column = st.selectbox("Chọn trục X", data.columns)
+        with col2:
+            y_column = st.selectbox("Chọn trục Y", data.columns)
         fig = px.bar(data, x=x_column, y=y_column,color = x_column)
         st.plotly_chart(fig,theme=None, use_container_width=True)
 
     elif chart_type == "Line":
+        st.header("Line Chart")
         multiple = st.checkbox("Vẽ nhiều đường", value=False)
-        x_column = st.selectbox("Chọn trục X", data.columns)
+        col1,col2 = st.columns(2)
+        with col1:
+            x_column = st.selectbox("Chọn trục X", data.columns)
 
         if multiple:
             container = st.empty()
             number = container.number_input("Nhập số lượng đường", min_value=1, step=1, value=1)
-
-            y_columns = []
-            for i in range(number):
-                y_column = st.selectbox(f"Chọn trục Y {i+1}", data.columns)
-                y_columns.append(y_column)
+            with col2:
+                y_columns = []
+                for i in range(number):
+                    with col2:
+                        y_column = st.selectbox(f"Chọn trục Y {i+1}", data.columns)
+                        y_columns.append(y_column)
 
     # Create line chart with multiple lines
             fig = px.line(data, x=x_column, y=y_columns, markers=True)
 
         else:
-            y_column = st.selectbox("Chọn trục Y", data.columns)
+            with col2:
+                y_column = st.selectbox("Chọn trục Y", data.columns)
 
         # Create line chart with single line
             fig = px.line(data, x=x_column, y=y_column, markers=True)
@@ -343,17 +477,22 @@ def create_chart(chart_type, data):
     elif chart_type == "Scatter":
 
         st.header("Scatter Chart")
-        x_column = st.selectbox("Chọn trục X", data.columns)
-
-        y_column = st.selectbox("Chọn trục Y", data.columns)
+        col1,col2 = st.columns(2)
+        with col1:
+            x_column = st.selectbox("Chọn trục X", data.columns)
+        with col2:
+            y_column = st.selectbox("Chọn trục Y", data.columns)
         fig = px.scatter(data, x=x_column, y=y_column,color=x_column)
         st.plotly_chart(fig,theme=None, use_container_width=True)
 
     elif chart_type == "Pie":
 
         st.header("Biểu đồ tròn")
-        x_column = st.selectbox("Chọn nhãn", data.columns)
-        y_column = st.selectbox("Chọn giá trị", data.columns)
+        col1,col2 = st.columns(2)
+        with col1:
+            x_column = st.selectbox("Chọn nhãn", data.columns)
+        with col2:
+            y_column = st.selectbox("Chọn giá trị", data.columns)
         donut = st.checkbox('Sử dụng donut', value=True)
         if donut:
         # compute and show the sample statistics
@@ -367,12 +506,15 @@ def create_chart(chart_type, data):
     
     elif chart_type == "Boxplot":
         st.header("Biểu đồ Hộp")
-        x_column = st.selectbox("Chọn trục X", data.columns)
-        y_column = st.selectbox("Chọn trục Y", data.columns)
+        col1,col2 = st.columns(2)
+        with col1:
+            x_column = st.selectbox("Chọn trục X", data.columns)
+        with col2:
+            y_column = st.selectbox("Chọn trục Y", data.columns)
 
         fig = px.box(data,x = x_column,y = y_column, )
         st.plotly_chart(fig,theme=None, use_container_width=True)
-    image = Image.open("sami.jpg")
+    image = Image.open("image/sami.jpg")
     with st.sidebar:
         st.sidebar.image(image,width = 50)
         st.sidebar.markdown("# Trực quan hóa #")
@@ -381,232 +523,305 @@ def create_chart(chart_type, data):
         """
         st.sidebar.markdown(mark_down_text)
 
-#hypothesis test
-def hypothesis_test(data):
+
+#### hypothesis test
+def hypothesis_test(test_type, data):
     # Perform basic data analysis
-    container.write(" # Kiểm định giả thuyết thống kê # ")
-    container.write("#### Dữ liệu ####")
-    container.write("Data")
-    container.dataframe(data,use_container_width=True)
-    container.markdown("---")
+    
     ######
-    container.write("#### Kiểm định về giá trị trung bình ####")
-    numeric_columns = data.select_dtypes(include=["int", "float"]).columns
-    x_column = st.selectbox("Chọn cột cần kiểm định ", numeric_columns)
-    container.markdown("Các yếu tố: ")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        clevel = st.text_input('Mức ý nghĩa', '0.05')
-    with col2:
-        a0 = st.text_input('Giá trị cần kiểm định', '')
-
-    with col3:
-        H1 = st.selectbox("Đối thuyết", ["Khác", "Lớn hơn", "Nhỏ hơn"])
-    
-    sample = data[x_column].values
-    alpha = float(clevel)
-    container.markdown("---")
-      
-    
-
-# Determine the alternative hypothesis based on the selected option
-    
-
-# Compare the p-value with the significance level and a0
-    if a0.strip():  # Check if a0 is not empty or whitespace
-        container.markdown("###### Bài toán kiểm định giả thuyết:")
+    if test_type =="Kiểm định một mẫu":
+        container.write("#### Kiểm định về giá trị trung bình ####")
+        numeric_columns = data.select_dtypes(include=["int", "float"]).columns
+        x_column = st.selectbox("Chọn cột cần kiểm định ", numeric_columns)
+        container.markdown("Các yếu tố: ")
         col1, col2, col3 = st.columns(3)
+        with col1:
+            clevel = st.text_input('Mức ý nghĩa', '0.05')
         with col2:
-            if H1 == "Khác":
-                st.latex(r'''
-                \left\{
-                \begin{aligned}
-                    H_0 &= \mu \\
-                    H_1 &\neq \mu
-                \end{aligned}
-                \right.
-                ''')
-            elif H1 == "Lớn hơn":
-                st.latex(r'''
-                \left\{
-                \begin{aligned}
-                    H_0 &= \mu \\
-                    H_1 &> \mu
-                \end{aligned}
-                \right.
-                ''')
-            else:
-                st.latex(r'''
-                \left\{
-                \begin{aligned}
-                    H_0 &= \mu \\
-                    H_1 &< \mu
-                \end{aligned}
-                \right.
-                ''')
-        stats_df = pd.DataFrame({
-        "Mean": [data[x_column].mean()],
-        "Standard Deviation": [data[x_column].std()],
-        "Count": [data[x_column].count()]
-    })
+            a0 = st.text_input('Giá trị cần kiểm định', '')
+
+        with col3:
+            H1 = st.selectbox("Đối thuyết", ["Khác", "Lớn hơn", "Nhỏ hơn"])
         
-        container.markdown("Giá trị thống kê tính được")
-        reset_df=stats_df.set_index("Mean",drop=True)
-        container.dataframe(reset_df,use_container_width=True)
-        a0_value = float(a0)
-        container.markdown("Thống kê phù hợp t:")
-        container.latex(r'''
-        t=\dfrac{(\overline{x}-\mu)\sqrt{n}}{s_d}
-        ''')
+        sample = data[x_column].values
+        alpha = float(clevel)
+        container.markdown("---")   
 
-        if H1 == "Khác":
-            t_statistic, p_value= stats.ttest_1samp(sample, popmean=a0_value)
-            st.markdown(f"t-statistic= :green[{t_statistic}]")
-            percent=stats.t.ppf(q=1-alpha/2, df=data[x_column].count()-1)
-            t_critical_1 = t.ppf(alpha / 2, data[x_column].count()-1)
-            t_critical_2 = t.ppf(1 - alpha / 2, data[x_column].count()-1)
 
-            # Generate x values for the PDF plot
-            x = np.linspace(-5, 5, 1000)
+        if a0.strip():  # Check if a0 is not empty or whitespace
+            container.markdown("###### Bài toán kiểm định giả thuyết:")
+            col1, col2, col3 = st.columns(3)
+            with col2:
+                if H1 == "Khác":
+                    st.latex(r'''
+                    \left\{
+                    \begin{aligned}
+                        H_0 &= \mu \\
+                        H_1 &\neq \mu
+                    \end{aligned}
+                    \right.
+                    ''')
+                elif H1 == "Lớn hơn":
+                    st.latex(r'''
+                    \left\{
+                    \begin{aligned}
+                        H_0 &= \mu \\
+                        H_1 &> \mu
+                    \end{aligned}
+                    \right.
+                    ''')
+                else:
+                    st.latex(r'''
+                    \left\{
+                    \begin{aligned}
+                        H_0 &= \mu \\
+                        H_1 &< \mu
+                    \end{aligned}
+                    \right.
+                    ''')
+            stats_df = pd.DataFrame({
+            "Mean": [data[x_column].mean()],
+            "Standard Deviation": [data[x_column].std()],
+            "Count": [data[x_column].count()]
+        })
+            
+            container.markdown("Giá trị thống kê tính được")
+            reset_df=stats_df.set_index("Mean",drop=True)
+            container.dataframe(reset_df,use_container_width=True)
+            a0_value = float(a0)
+            container.markdown("Thống kê phù hợp t:")
+            container.latex(r'''
+            t=\dfrac{(\overline{x}-\mu)\sqrt{n}}{s_d}
+            ''')
+
+            if H1 == "Khác":
+                t_statistic, p_value= stats.ttest_1samp(sample, popmean=a0_value)
+                st.markdown(f"t-statistic= :green[{t_statistic}]")
+                percent=stats.t.ppf(q=1-alpha/2, df=data[x_column].count()-1)
+                t_critical_1 = t.ppf(alpha / 2, data[x_column].count()-1)
+                t_critical_2 = t.ppf(1 - alpha / 2, data[x_column].count()-1)
+
+                # Generate x values for the PDF plot
+                x = np.linspace(-5, 5, 1000)
+
+                # Calculate the PDF values
+                pdf = t.pdf(x, data[x_column].count()-1)
+
+                # Plot the PDF
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=x, y=pdf, name="PDF"))
+                fig.update_layout(
+                    title=f"Student's t-Distribution PDF (df={data[x_column].count()-1})",
+                    xaxis_title="x",
+                    yaxis_title="PDF",
+                )
+
+                x_fill1 = np.linspace(-5, t_critical_1, 1000)
+                pdf_fill1 = t.pdf(x_fill1, data[x_column].count()-1)
+
+                x_fill2 = np.linspace(t_critical_2, 5, 1000)
+                pdf_fill2 = t.pdf(x_fill2, data[x_column].count()-1)
+
+                # Highlight the area under the curve    
+                fig.add_trace(go.Scatter(x=x_fill1, y=pdf_fill1, fill='tozeroy', fillcolor='rgba(100, 10, 10, 0.3)',
+                            mode='lines', line=dict(color='rgba(0, 0, 0, 0)'), name='Area Under Curve'))
+                fig.add_trace(go.Scatter(x=x_fill2, y=pdf_fill2, fill='tozeroy', fillcolor='rgba(100, 10, 10, 0.3)',
+                            mode='lines', line=dict(color='rgba(0, 0, 0, 0)'), name='Area Under Curve'))
+
+                # Highlight the two tail areas
+                fig.add_trace(go.Scatter(x=[t_critical_1, t_critical_1], y=[0, t.pdf(t_critical_1, data[x_column].count()-1)],
+                            mode="lines", name="Left Tail Area", line=dict(color="red", dash="dash")))
+                fig.add_trace(go.Scatter(x=[t_critical_2, t_critical_2], y=[0, t.pdf(t_critical_2, data[x_column].count()-1)],
+                            mode="lines", name="Right Tail Area", line=dict(color="red", dash="dash")))
+
+                # Display the plot
+                st.plotly_chart(fig,theme=None, use_container_width=True)
+                
+                sigma = (data[x_column].std())/math.sqrt(data[x_column].count())  # Sample stdev/sample size
+
+                interval=stats.t.interval(1-alpha,                        # Confidence level
+                    df = data[x_column].count()-1,                     # Degrees of freedom
+                    loc = data[x_column].mean(), # Sample mean
+                    scale= sigma)
+                st.markdown(f"Khoảng tin cậy 2 phía: :green[{interval}]" )
+                st.markdown("##### Kết luận")
+                if(np.abs(t_statistic) > percent):
+                    latex_expression = r"t_{n-1}(\frac{\alpha}{2})"
+                    st.markdown(f"Vì |t_statistic| = :green[{np.abs(t_statistic)}] > $$ {latex_expression}$$ = :green[{percent}] ")
+                    st.markdown(f"nên ta bác bỏ giả thuyết H0 ở mức ý nghĩa :green[{alpha}]")
+                else:
+                    latex_expression = r"t_{n-1}(\frac{\alpha}{2})"
+                    st.markdown(f"Vì |t_statistic|= :green[{np.abs(t_statistic)}] < $$ {latex_expression}$$=:green[{percent}] ")
+                    st.markdown(f"nên ta chấp nhận giả thuyết H0 ở mức ý nghĩa :green[{alpha}]")
+
+            elif H1 == "Lớn hơn":
+                percent=stats.t.ppf(q=1-alpha, df=data[x_column].count()-1)
+                t_statistic = (data[x_column].mean() - a0_value) / (data[x_column].std() / math.sqrt(data[x_column].count()))
+                st.markdown(f"t-statistic= :green[{t_statistic}]")
+                t_critical = stats.t.ppf(1 - alpha, df=data[x_column].count()-1)
+
+                # Generate x values for the PDF plot
+                x = np.linspace(-5, 5, 1000)
+
+                # Calculate the PDF values
+                pdf = stats.t.pdf(x, df=data[x_column].count()-1)
+
+                # Plot the PDF
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=x, y=pdf, name="PDF"))
+                fig.update_layout(
+                title=f"Student's t-Distribution PDF (df={data[x_column].count()-1})",
+                xaxis_title="x",
+                yaxis_title="PDF",
+                )
+
+                x_fill = np.linspace(t_critical, x[-1], 1000)
+                pdf_fill = stats.t.pdf(x_fill, df=data[x_column].count()-1)
+
+                # Highlight the area under the curve
+                fig.add_trace(go.Scatter(x=x_fill, y=pdf_fill, fill='tozeroy', fillcolor='rgba(100, 10, 10, 0.3)',
+                            mode='lines', line=dict(color='rgba(0, 0, 0, 0)'), name='Area Under Curve'))
+
+                # Highlight the critical region
+                fig.add_trace(go.Scatter(x=[t_critical, t_critical], y=[0, stats.t.pdf(t_critical, df=data[x_column].count()-1)],
+                            mode="lines", name="Critical Region", line=dict(color="red", dash="dash")))
+
+
+                st.plotly_chart(fig, theme=None, use_container_width=True)
+                st.markdown("##### Kết luận")
+                if(t_statistic > percent):
+                    latex_expression = r"t_{n-1}({1- \alpha})"
+                    st.markdown(f"Vì t_statistic= :green[{t_statistic}] > $$ {latex_expression}$$ = :green[{percent}] ")
+                    st.markdown(f"nên ta bác bỏ giả thuyết H0 ở mức ý nghĩa :green[{alpha}]")
+                else:
+                    latex_expression = r"t_{n-1}({1- \alpha})"
+                    st.markdown(f"Vì t_statistic= :green[{t_statistic}] < $$ {latex_expression}$$=:green[{percent}] ")
+                    st.markdown(f"nên ta chấp nhận giả thuyết H0 ở mức ý nghĩa :green[{alpha}]")  
+            else:
+                percent=stats.t.ppf(q=alpha, df=data[x_column].count()-1)
+                t_statistic = (data[x_column].mean() - a0_value) / (data[x_column].std() / math.sqrt(data[x_column].count()))
+                st.markdown(f"t-statistic= :green[{t_statistic}]")
+                t_critical = stats.t.ppf(alpha, df=data[x_column].count()-1)
+                # Generate x values for the PDF plot
+                x = np.linspace(-5, 5, 1000)
+
+                # Calculate the PDF values
+                pdf = stats.t.pdf(x, df=data[x_column].count()-1)
+
+                # Plot the PDF
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(x=x, y=pdf, name="PDF"))
+                fig.update_layout(
+                title=f"Student's t-Distribution PDF (df={data[x_column].count()-1})",
+                xaxis_title="x",
+                yaxis_title="PDF",
+                )
+
+                x_fill = np.linspace(-5,t_critical, 1000)
+                pdf_fill = stats.t.pdf(x_fill, df=data[x_column].count()-1)
+
+                # Highlight the area under the curve
+                fig.add_trace(go.Scatter(x=x_fill, y=pdf_fill, fill='tozeroy', fillcolor='rgba(100, 10, 10, 0.3)',
+                            mode='lines', line=dict(color='rgba(0, 0, 0, 0)'), name='Area Under Curve'))
+
+                # Highlight the critical region
+                fig.add_trace(go.Scatter(x=[t_critical, t_critical], y=[0, stats.t.pdf(t_critical, df=data[x_column].count()-1)],
+                            mode="lines", name="Critical Region", line=dict(color="red", dash="dash")))
+
+                st.plotly_chart(fig, theme=None, use_container_width=True)
+                st.markdown("##### Kết luận")
+                if(t_statistic < percent):
+                    latex_expression = r"t_{n-1}({\alpha})"
+                    st.markdown(f"Vì t_statistic= :green[{t_statistic}] < $$ {latex_expression}$$ = :green[{percent}] ")
+                    st.markdown(f"nên ta bác bỏ giả thuyết H0 ở mức ý nghĩa :green[{alpha}]")
+                else:
+                    latex_expression = r"t_{n-1}({\alpha})"
+                    st.markdown(f"Vì t_statistic= :green[{t_statistic}] > $$ {latex_expression}$$=:green[{percent}] ")
+                    st.markdown(f"nên ta chấp nhận giả thuyết H0 ở mức ý nghĩa :green[{alpha}]")  
+
+        #
+        container.write("#### Kiểm định về phương sai ####")
+        numeric_columns = data.select_dtypes(include=["int", "float"]).columns
+        x_column = st.selectbox("Chọn cột cần kiểm định 1 ", numeric_columns)
+        container.markdown("Các yếu tố: ")
+        col1, col2 = st.columns(2)
+        with col1:
+            clevel = st.text_input('Mức ý nghĩa1', '0.05')
+        with col2:
+            a0 = st.text_input('Giá trị cần kiểm định1', '')
+
+        sample = data[x_column].values
+        alpha = float(clevel)
+        container.markdown("---")   
+
+        if a0.strip():  # Check if a0 is not empty or whitespace
+            container.markdown("###### Bài toán kiểm định giả thuyết:")
+            col1, col2 = st.columns(2)
+            with col2:
+                st.latex(r'''
+                \left\{
+                \begin{aligned}
+                    H_0 &: \sigma^2 = \sigma_0^2 \\
+                    H_1 &: \sigma^2 \neq \sigma_0^2
+                \end{aligned}
+                \right.
+                ''')
+
+            stats_df = pd.DataFrame({
+                "Variance": [data[x_column].var()],
+                "Count": [data[x_column].count()]
+            })
+                
+            container.markdown("Giá trị thống kê tính được")
+            reset_df = stats_df.set_index("Variance", drop=True)
+            container.dataframe(reset_df, use_container_width=True)
+
+            a0_value = float(a0)
+            container.markdown("Thống kê phù hợp chi-square:")
+            container.latex(r'''
+            \chi^2 = (n-1) \cdot \frac{{s^2}}{{\sigma_0^2}}
+            ''')
+
+            chi2_statistic = (data[x_column].count() - 1) * data[x_column].var() / a0_value
+            st.markdown(f"chi-square statistic = :green[{chi2_statistic}]")
+            chi2_critical = stats.chi2.ppf(1 - alpha / 2, df=data[x_column].count() - 1)
+
+            # Generate x values for the Chi-square distribution plot
+            x = np.linspace(0, 20, 1000)
 
             # Calculate the PDF values
-            pdf = t.pdf(x, data[x_column].count()-1)
+            pdf = stats.chi2.pdf(x, df=data[x_column].count()-1)
 
             # Plot the PDF
             fig = go.Figure()
             fig.add_trace(go.Scatter(x=x, y=pdf, name="PDF"))
             fig.update_layout(
-                title=f"Student's t-Distribution PDF (df={data[x_column].count()-1})",
+                title=f"Chi-square Distribution PDF (df={data[x_column].count()-1})",
                 xaxis_title="x",
                 yaxis_title="PDF",
             )
 
-            x_fill1 = np.linspace(-5, t_critical_1, 1000)
-            pdf_fill1 = t.pdf(x_fill1, data[x_column].count()-1)
+            x_fill1 = np.linspace(0, chi2_critical, 1000)
+            pdf_fill1 = stats.chi2.pdf(x_fill1, df=data[x_column].count()-1)
 
-            x_fill2 = np.linspace(t_critical_2, 5, 1000)
-            pdf_fill2 = t.pdf(x_fill2, data[x_column].count()-1)
+            x_fill2 = np.linspace(chi2_critical, x[-1], 1000)
+            pdf_fill2 = stats.chi2.pdf(x_fill2, df=data[x_column].count()-1)
 
-            # Highlight the area under the curve    
-            fig.add_trace(go.Scatter(x=x_fill1, y=pdf_fill1, fill='tozeroy', fillcolor='rgba(100, 10, 10, 0.3)',
-                         mode='lines', line=dict(color='rgba(0, 0, 0, 0)'), name='Area Under Curve'))
-            fig.add_trace(go.Scatter(x=x_fill2, y=pdf_fill2, fill='tozeroy', fillcolor='rgba(100, 10, 10, 0.3)',
-                         mode='lines', line=dict(color='rgba(0, 0, 0, 0)'), name='Area Under Curve'))
-
-            # Highlight the two tail areas
-            fig.add_trace(go.Scatter(x=[t_critical_1, t_critical_1], y=[0, t.pdf(t_critical_1, data[x_column].count()-1)],
-                         mode="lines", name="Left Tail Area", line=dict(color="red", dash="dash")))
-            fig.add_trace(go.Scatter(x=[t_critical_2, t_critical_2], y=[0, t.pdf(t_critical_2, data[x_column].count()-1)],
-                         mode="lines", name="Right Tail Area", line=dict(color="red", dash="dash")))
-
-            # Display the plot
-            st.plotly_chart(fig,theme=None, use_container_width=True)
+            fig.add_trace(go.Scatter(x=x_fill1, y=pdf_fill1, name="Rejection Region", fill='tozeroy'))
+            fig.add_trace(go.Scatter(x=x_fill2, y=pdf_fill2, name="Rejection Region", fill='tozeroy'))
             
-            sigma = (data[x_column].std())/math.sqrt(data[x_column].count())  # Sample stdev/sample size
-
-            interval=stats.t.interval(1-alpha,                        # Confidence level
-                 df = data[x_column].count()-1,                     # Degrees of freedom
-                 loc = data[x_column].mean(), # Sample mean
-                 scale= sigma)
-            st.markdown(f"Khoảng tin cậy 2 phía: :green[{interval}]" )
-            st.markdown("##### Kết luận")
-            if(np.abs(t_statistic) > percent):
-                latex_expression = r"t_{n-1}(\frac{\alpha}{2})"
-                st.markdown(f"Vì |t_statistic| = :green[{np.abs(t_statistic)}] > $$ {latex_expression}$$ = :green[{percent}] ")
-                st.markdown(f"nên ta bác bỏ giả thuyết H0 ở mức ý nghĩa :green[{alpha}]")
+            fig.update_layout(showlegend=False)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            if chi2_statistic > chi2_critical :
+                container.markdown(":red[Không chấp nhận null hypothesis]")
+                container.markdown("Có bằng chứng đủ để bác bỏ giả thuyết H0.")
             else:
-                latex_expression = r"t_{n-1}(\frac{\alpha}{2})"
-                st.markdown(f"Vì |t_statistic|= :green[{np.abs(t_statistic)}] < $$ {latex_expression}$$=:green[{percent}] ")
-                st.markdown(f"nên ta chấp nhận giả thuyết H0 ở mức ý nghĩa :green[{alpha}]")
-
-        elif H1 == "Lớn hơn":
-            percent=stats.t.ppf(q=1-alpha, df=data[x_column].count()-1)
-            t_statistic = (data[x_column].mean() - a0_value) / (data[x_column].std() / math.sqrt(data[x_column].count()))
-            st.markdown(f"t-statistic= :green[{t_statistic}]")
-            t_critical = stats.t.ppf(1 - alpha, df=data[x_column].count()-1)
-
-            # Generate x values for the PDF plot
-            x = np.linspace(-5, 5, 1000)
-
-            # Calculate the PDF values
-            pdf = stats.t.pdf(x, df=data[x_column].count()-1)
-
-            # Plot the PDF
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=x, y=pdf, name="PDF"))
-            fig.update_layout(
-            title=f"Student's t-Distribution PDF (df={data[x_column].count()-1})",
-            xaxis_title="x",
-            yaxis_title="PDF",
-            )
-
-            x_fill = np.linspace(t_critical, x[-1], 1000)
-            pdf_fill = stats.t.pdf(x_fill, df=data[x_column].count()-1)
-
-            # Highlight the area under the curve
-            fig.add_trace(go.Scatter(x=x_fill, y=pdf_fill, fill='tozeroy', fillcolor='rgba(100, 10, 10, 0.3)',
-                         mode='lines', line=dict(color='rgba(0, 0, 0, 0)'), name='Area Under Curve'))
-
-            # Highlight the critical region
-            fig.add_trace(go.Scatter(x=[t_critical, t_critical], y=[0, stats.t.pdf(t_critical, df=data[x_column].count()-1)],
-                         mode="lines", name="Critical Region", line=dict(color="red", dash="dash")))
-
-# Display the plot
-            st.plotly_chart(fig, theme=None, use_container_width=True)
-            st.markdown("##### Kết luận")
-            if(t_statistic > percent):
-                latex_expression = r"t_{n-1}({1- \alpha})"
-                st.markdown(f"Vì t_statistic= :green[{t_statistic}] > $$ {latex_expression}$$ = :green[{percent}] ")
-                st.markdown(f"nên ta bác bỏ giả thuyết H0 ở mức ý nghĩa :green[{alpha}]")
-            else:
-                latex_expression = r"t_{n-1}({1- \alpha})"
-                st.markdown(f"Vì t_statistic= :green[{t_statistic}] < $$ {latex_expression}$$=:green[{percent}] ")
-                st.markdown(f"nên ta chấp nhận giả thuyết H0 ở mức ý nghĩa :green[{alpha}]")  
-        else:
-            percent=stats.t.ppf(q=alpha, df=data[x_column].count()-1)
-            t_statistic = (data[x_column].mean() - a0_value) / (data[x_column].std() / math.sqrt(data[x_column].count()))
-            st.markdown(f"t-statistic= :green[{t_statistic}]")
-            t_critical = stats.t.ppf(alpha, df=data[x_column].count()-1)
-            # Generate x values for the PDF plot
-            x = np.linspace(-5, 5, 1000)
-
-            # Calculate the PDF values
-            pdf = stats.t.pdf(x, df=data[x_column].count()-1)
-
-            # Plot the PDF
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=x, y=pdf, name="PDF"))
-            fig.update_layout(
-            title=f"Student's t-Distribution PDF (df={data[x_column].count()-1})",
-            xaxis_title="x",
-            yaxis_title="PDF",
-            )
-
-            x_fill = np.linspace(-5,t_critical, 1000)
-            pdf_fill = stats.t.pdf(x_fill, df=data[x_column].count()-1)
-
-            # Highlight the area under the curve
-            fig.add_trace(go.Scatter(x=x_fill, y=pdf_fill, fill='tozeroy', fillcolor='rgba(100, 10, 10, 0.3)',
-                         mode='lines', line=dict(color='rgba(0, 0, 0, 0)'), name='Area Under Curve'))
-
-            # Highlight the critical region
-            fig.add_trace(go.Scatter(x=[t_critical, t_critical], y=[0, stats.t.pdf(t_critical, df=data[x_column].count()-1)],
-                         mode="lines", name="Critical Region", line=dict(color="red", dash="dash")))
-
-            st.plotly_chart(fig, theme=None, use_container_width=True)
-            st.markdown("##### Kết luận")
-            if(t_statistic < percent):
-                latex_expression = r"t_{n-1}({\alpha})"
-                st.markdown(f"Vì t_statistic= :green[{t_statistic}] < $$ {latex_expression}$$ = :green[{percent}] ")
-                st.markdown(f"nên ta bác bỏ giả thuyết H0 ở mức ý nghĩa :green[{alpha}]")
-            else:
-                latex_expression = r"t_{n-1}({\alpha})"
-                st.markdown(f"Vì t_statistic= :green[{t_statistic}] > $$ {latex_expression}$$=:green[{percent}] ")
-                st.markdown(f"nên ta chấp nhận giả thuyết H0 ở mức ý nghĩa :green[{alpha}]")  
-
-        # Interpret the results based on the p-value and the selected options
+                container.markdown(":green[Chấp nhận null hypothesis]")
+                container.markdown("Không có bằng chứng đủ để bác bỏ giả thuyết H0.")
         
-    image = Image.open("sami.jpg")
+        
+    image = Image.open("image/sami.jpg")
     with st.sidebar:
         st.sidebar.image(image,width = 50)
         st.sidebar.markdown("# Thống kê #")
@@ -625,13 +840,12 @@ def hypothesis_test(data):
         """
         st.sidebar.markdown(mark_down_text)
 
-    
-    
+        
 # main function
 def main():
 
     
-    image = Image.open("sami.jpg")
+    image = Image.open("image/sami.jpg")
     
     container.image(image,width = 100)
     container.write(" # Thống kê và phân tích dữ liệu # ")
@@ -645,12 +859,12 @@ def main():
         container.markdown(
                 """
                 <style>
-                .a {
+                .b {
                     margin-top: 50px ;
                     }
                 </style>
 
-                <div class="a"></div>
+                <div class="b"></div>
                 """,
                 unsafe_allow_html=True
             )
@@ -673,6 +887,7 @@ def main():
             if selected =='Trực quan hóa':
 
                 container.write(" # Trực quan hóa dữ liệu # ")
+                container.write("#### Dữ liệu ####")
                 container.write("Data")
                 container.dataframe(data,use_container_width=True)
                 container.markdown("---")
@@ -682,19 +897,135 @@ def main():
                 create_chart(chart_type, data)
 
             if selected =='Kiểm định':
-                hypothesis_test(data)
+                container.write(" # Kiểm định giả thuyết thống kê # ")
+                container.write("#### Dữ liệu ####")
+                container.write("Data")
+                container.dataframe(data,use_container_width=True)
+                container.markdown("---")
+                test_type = st.selectbox("Chọn phương thức muốn kiểm định", ["Kiểm định một mẫu", "So sánh hai mẫu", "Kiểm định phi tham số"])
+                hypothesis_test(test_type, data)
         else:
             st.sidebar.image(image,width = 50)
-            st.sidebar.markdown("# Data #")
             st.sidebar.markdown("---")
+
+            container.markdown("---")
             
+            st.markdown(
+                """
+                <style>
+                .b {
+                    margin-top: 50px ;
+                    }
+                </style>
 
+                <div class="b"></div>
+                """,
+                unsafe_allow_html=True
+            )
 
+            st.markdown(" ### Làm sao để sử dụng ?")
+            st.markdown(
+                """
+                <style>
+                .b {
+                    margin-top: 50px ;
+                    }
+                </style>
 
+                <div class="b"></div>
+                """,
+                unsafe_allow_html=True
+            )
 
-          
+            col1,col2=st.columns(2)
+            with col1:
+                st.markdown("""
+                        <head>
+                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                        </head>
+                        <body>
 
-        
+                        <i class="fa-solid fa-1 fa-beat" style="font-size:70px;color: #ff4b4b;"></i>
+                        <h5>Tải lên dữ liệu của bạn</h5>
+                        </body>
+                                            
+                        
+                        """, unsafe_allow_html=True)
+                image1 = Image.open("image/im1.png")
+                st.image(image1)
+
+                st.markdown(
+                """
+                <style>
+                .b {
+                    margin-top: 50px ;
+                    }
+                </style>
+
+                <div class="b"></div>
+                """,
+                unsafe_allow_html=True
+            )
+                st.markdown("""
+                        <head>
+                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                        </head>
+                        <body>
+
+                        <i class="fa-solid fa-3 fa-beat" style="font-size:70px;color: #ff4b4b;"></i>
+                        <h5>Bắt đầu tính toán </h5>
+                        </body>
+                                            
+                        
+                        """, unsafe_allow_html=True)
+                image3 = Image.open("image/im3.png")
+                st.image(image3)
+                
+            with col2:
+                st.markdown("""
+                        <head>
+                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                        </head>
+                        <body>
+
+                        <i class="fa-solid fa-2 fa-beat" style="font-size:70px;color: #ff4b4b;"></i>
+                        <h5>Chọn chức năng mong muốn</h5>
+                        </body>
+                                            
+                        
+                        """, unsafe_allow_html=True)
+                image2 = Image.open("image/im2.png")
+                st.image(image2)
+                st.markdown(
+                """
+                <style>
+                .b {
+                    margin-top: 50px ;
+                    }
+                </style>
+
+                <div class="b"></div>
+                """,
+                unsafe_allow_html=True
+            )
+                st.markdown("""
+                        <head>
+                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                        </head>
+                        <body>
+
+                        <i class="fa-solid fa-4 fa-beat" style="font-size:70px;color: #ff4b4b;"></i>
+                        <h5>Tải xuống và tiếp tục công việc</h5>
+                        </body>
+                                            
+                        
+                        """, unsafe_allow_html=True)
+                image4 = Image.open("image/im4.png")
+                st.image(image4)
+            container.markdown("---")
+            footer()
+    
+    
 if __name__ == "__main__":
     main()
     
