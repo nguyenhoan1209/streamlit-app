@@ -1241,7 +1241,6 @@ def hypothesis_test(test_type, data):
             
             container.write(np.corrcoef(sort_col, theoretical_quantiles))
 
-            
 
         
        
@@ -1253,7 +1252,7 @@ def main():
         st.sidebar.image(image,width = 250)
         st.sidebar.markdown("---")
         st.markdown("#### Chọn chức năng ####")
-        selected = option_menu(None, ["Dữ liệu", "Thống kê", "Trực quan hóa","Kiểm định"], 
+        selected = option_menu(None, ["Dữ liệu", "Thống kê", "Trực quan hóa","Kiểm định","Hoi quy"], 
             icons=['clipboard-data', 'table', "bar-chart-fill", 'clipboard-check'], 
             menu_icon="cast", default_index=0,styles={
                                    "container": {"padding": "5!important", "background-color": "#fafafa"},
