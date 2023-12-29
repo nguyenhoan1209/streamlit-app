@@ -6,21 +6,16 @@ from streamlit_extras import F
 from streamlit_option_menu import option_menu
 from streamlit_extras.dataframe_explorer import dataframe_explorer
 from streamlit_timeline import timeline
-from streamlit_image_select import image_select
 import numpy as np
 import math
 import os
 import plotly.graph_objects as go
 import scipy.stats as stats
 from scipy.stats import t
-from scipy.stats import chi2_contingency
-import plotly.figure_factory as ff
+from modules import Chart, Info, Regression, Classification, Clustering
 
+st.set_page_config("DataApp",layout="wide",initial_sidebar_state="expanded",)
 
-icon_page = Image.open("image/icon_page.png")
-st.set_page_config("DataApp",icon_page,layout="wide",initial_sidebar_state="expanded",)
-
-container = st.container()
 
 def footer():
     st.markdown(
@@ -188,79 +183,27 @@ def summary_p(df):
 
    
 
-def info(data):
-    container.write(" # Thông tin dữ liệu # ")
-    container.write("#### Dữ liệu ####")
-    filtered_df = dataframe_explorer(data, case=False)
-    container.dataframe(filtered_df, use_container_width=True)
-    st.download_button(
-            label="Download filter data",
-            data=filtered_df.to_csv(index=False),
-            file_name='data_filter.csv',
-            mime='text/csv',
-            )
-    container.markdown("---")
-
-    container.write("#### Thông tin ####")
-    r=data.shape[0]
-    c=data.shape[1]
-    container.markdown(f"Kích thước dữ liệu: :red[{r}] x :red[{c}]")
-    
-    col1,col2,col3 = st.columns(3)
-
-
-    with col1:
-          
-       st.write("Tên cột: ")
-       st.dataframe(data.columns,use_container_width=True)
-    with col2:
-          
-       st.write("Kiểu dữ liệu cột: ")
-       st.dataframe(data.dtypes,use_container_width=True)
-        
-    with col3:
-       st.write("Unique Values: ")
-       st.dataframe(data.nunique(),use_container_width=True)
-
-    container.markdown("---")
-    st.markdown("#### Missing Values ####")
-    col1n,col2n = st.columns([1,3])
-    with col1n:   
-        st.dataframe(data.isnull().sum(),use_container_width=True)
-    with col2n:
-        st.markdown("   Missing value (giá trị thiếu) trong khoa học dữ liệu và phân tích dữ liệu là giá trị không tồn tại hoặc không được xác định trong tập dữ liệu.")
-        st.markdown("Missing value có thể xảy ra khi dữ liệu bị mất hoặc bị lỗi trong quá trình thu thập hoặc nhập liệu, hoặc có thể do một giá trị không có ý nghĩa được đại diện bởi các giá trị như NaN (Not a Number) hoặc NULL trong các ngôn ngữ lập trình.")
-        data.dropna(inplace=True)
-        data.reset_index(drop=True, inplace=True)
-        st.download_button(
-            label="Download clean data",
-            data=data.to_csv(index=False),
-            file_name='data_clean.csv',
-            mime='text/csv',
-            )
-        container.markdown("---")
-    footer()
 
 
 
 ### analyze_data      
 def analyze_data(data):
     # Perform basic data analysis
-    container.write(" # Data Analysis # ")
-    container.write("#### Dữ liệu ####")
-    container.write("Data")
-    with container.expander("See explanation"):
-        edited_df = container.experimental_data_editor(data,use_container_width=True,num_rows="dynamic")
-    container.markdown("---")
+    st.write(" # Data Analysis # ")
+    st.write("#### Dữ liệu ####")
+    st.write("Data")
+    with st.expander("See explanation"):
+        edited_df = st.experimental_data_editor(data,use_container_width=True,num_rows="dynamic")
+    st.markdown("---")
     ######
-    container.write("#### Thống kê mô tả một chiều ####")
+    st.write("#### Thống kê mô tả một chiều ####")
 
-    container.markdown("###### Bảng giá trị thống kê mô tả ######")
+    st.markdown("###### Bảng giá trị thống kê mô tả ######")
     use_sample_stats = st.checkbox('Hiệu chỉnh mẫu thống kê', value=True)
     if use_sample_stats:
     # compute and show the sample statistics
-        container.dataframe(summary(edited_df),use_container_width=True)
-        container.download_button(
+        st.dataframe(summary(edited_df),use_container_width=True)
+        st.download_button(
         label="Download data as CSV",
         data=summary(data).to_csv(index=False),
         file_name='data_analyze.csv',
@@ -268,282 +211,17 @@ def analyze_data(data):
    
     else:
     # compute and show the population statistics
-        container.dataframe(summary_p(edited_df),use_container_width=True)
-        container.download_button(
+        st.dataframe(summary_p(edited_df),use_container_width=True)
+        st.download_button(
         label="Download data as CSV",
         data=summary_p(data).to_csv(index=False),
         file_name='data_analyze.csv',
         mime='text/csv')
-    
-
-    container.markdown("---")
-    container.markdown("###### Giá trị trung bình (Mean) ######")
-    container.markdown("Giá trị trung bình, hay còn gọi là kỳ vọng, là một khái niệm thống kê dùng để đo độ trung tâm của một tập dữ liệu. Nó được tính bằng cách lấy tổng của tất cả các giá trị trong tập dữ liệu và chia cho số lượng các giá trị đó.")
-    container.latex(r'''
-    \operatorname{E}(X) = \frac{x_1 + x_2 + \dots + x_n}{n}
-    ''')
-
-    input1 = st.text_input("Ví dụ giá trị trung bình:",placeholder="Vd:1,2,4,2,5")
-
-
-    values = input1.split(',')
-
-
-    numeric_values = []
-    for value in values:
-        value = value.strip()
-        if value:
-            numeric_values.append(float(value))
-
-
-    series1 = pd.Series(numeric_values)
-
-
-    series1_mean = series1.mean()
-
-    if input1:
-        container.markdown(f"Giá trị trung bình của dãy: <span style='color:green;'>{series1_mean}</span>", unsafe_allow_html=True)
-    container.markdown("---")
-
-    container.markdown("###### Phương sai (Variance) ######")
-    container.markdown("Phương sai (variance) là một thước đo về mức độ phân tán của các giá trị trong một tập dữ liệu. Nó đo lường độ lệch của mỗi giá trị so với giá trị trung bình của tập dữ liệu đó. Phương sai được tính bằng cách lấy tổng bình phương của hiệu giữa mỗi giá trị và giá trị trung bình, chia cho số lượng các giá trị trong tập dữ liệu.")
-    container.latex(r'''
-    \operatorname{Var}(X) = \sigma^2 = \frac{1}{N} \sum_{i=1}^N (x_i - \mu)^2
-    ''')
-    container.markdown("Phương sai mẫu hiệu chỉnh được tính bằng cách lấy tổng bình phương của hiệu giữa mỗi giá trị và giá trị trung bình, chia cho số lượng các giá trị trong mẫu trừ 1.")
-    container.latex(r'''
-    \operatorname{s}^2 = \frac{1}{n-1} \sum_{i=1}^n (x_i - \bar{x})^2
-    ''')
-    input2 = st.text_input("Ví dụ phương sai:",placeholder="Vd:1,2,4,2,5")
-    values2 = input2.split(',')
-    numeric_values1 = []
-    for value in values2:
-        value = value.strip()
-        if value:
-            numeric_values1.append(float(value))
-    series2 = pd.Series(numeric_values1)
-    series2_var = series2.var()
-    if input1:
-        container.markdown(f"Giá trị phương sai hiệu chỉnh của dãy: <span style='color:green;'>{series2_var}</span>", unsafe_allow_html=True)
-    container.markdown("---")
-
-    container.markdown("###### Các tứ phân vị (Quartiles) ######")
-    container.markdown("Các tứ phân vị (quartiles) là một phương pháp thống kê mô tả để phân chia một tập dữ liệu thành bốn phần bằng nhau. Các tứ phân vị chia tập dữ liệu thành ba khoảng giá trị, được đánh số từ Q1 đến Q3, sao cho khoảng giá trị giữa Q1 và Q3 chứa 50% dữ liệu và khoảng giá trị giữa Q2 (tức là giá trị trung vị) cũng chứa 50% dữ liệu.")
-    container.markdown("Tứ phân vị thứ nhất (Q1) tương ứng với phân vị 25%. Nó là giá trị mà có 25% dữ liệu nhỏ hơn hoặc bằng nó và 75% dữ liệu lớn hơn hoặc bằng nó.")
-    container.latex(r'''
-     \operatorname{Q1} =\begin{cases} x_{(\frac{n+1}{4})}, & \text{n là số chẵn} \\ \frac{1}{2}(x_{(\frac{n+1}{4})} + x_{(\frac{n+3}{4})}), & \text{n là số lẻ} \end{cases}
-    ''')
-    container.markdown("Tứ phân vị thứ hai (Q2) tương ứng với phân vị 50% hoặc giá trị trung vị. Nó là giá trị mà có 50% dữ liệu nhỏ hơn hoặc bằng nó và 50% dữ liệu lớn hơn hoặc bằng nó.")
-    container.latex(r'''
-     \operatorname{Q2} = \begin{cases} x_{(\frac{n+1}{2})}, & \text{n là số lẻ} \\ \frac{x_{(\frac{n}{2})} + x_{(\frac{n}{2}+1)}}{2}, & \text{n là số chẵn} \end{cases}
-    ''')
-    container.markdown("Tứ phân vị thứ ba (Q3) tương ứng với phân vị 75%. Nó là giá trị mà có 75% dữ liệu nhỏ hơn hoặc bằng nó và 25% dữ liệu lớn hơn hoặc bằng nó.")
-    container.latex(r'''
-     \operatorname{Q3} = \begin{cases} x_{(\frac{3n+1}{4})}, & \text{n là số chẵn} \\ \frac{1}{2}(x_{(\frac{3n+1}{4})} + x_{(\frac{3n+3}{4})}), & \text{n là số lẻ} \end{cases}
-    ''')
-    container.latex(r'''
-    \textcolor{red}{\textbf{Chú ý: }} x_{(i)} \text{ là phần tử thứ $i$}  \text{ của tập dữ liệu đã được sắp xếp theo thứ tự tăng dần.}
-    ''')
-    #Eg 
-    input3 = st.text_input("Ví dụ các tứ phân vị:",placeholder="Vd:1,2,4,2,5")
-    values3 = input3.split(',')
-    numeric_values3 = []
-    for value3 in values3:
-        value3 = value3.strip()
-        if value3:
-            numeric_values3.append(float(value3))
-    series3 = pd.Series(numeric_values3)
-    q1 = series3.quantile(0.25)
-    q2 = series3.quantile(0.5)  # Median
-    q3 = series3.quantile(0.75)
-    if input3:
-        container.markdown(f"Giá trị Q1: <span style='color:green;'>{q1}</span>", unsafe_allow_html=True)
-        container.markdown(f"Giá trị Q2 (Trung vị): <span style='color:green;'>{q2}</span>", unsafe_allow_html=True)
-        container.markdown(f"Giá trị Q3: <span style='color:green;'>{q3}</span>", unsafe_allow_html=True)
-    container.markdown("---")
-
-    
-    container.markdown("###### Độ lệch (Skewness) ######")
-    container.markdown("Skewness (độ lệch) là một độ đo thống kê được sử dụng để đo mức độ bất đối xứng của phân phối dữ liệu. Nó đo sự chệch lệch của phân phối dữ liệu so với phân phối chuẩn hoặc phân phối đối xứng")
-    container.markdown("Nếu phân phối dữ liệu lệch sang phải (có đuôi phân phối dài hơn bên phải so với bên trái), thì giá trị skewness sẽ là số dương. Ngược lại, nếu phân phối dữ liệu lệch sang trái (có đuôi phân phối dài hơn bên trái so với bên phải), thì giá trị skewness sẽ là số âm. Nếu phân phối dữ liệu đối xứng, thì skewness sẽ bằng 0.")
-    container.latex(r'''
-    \operatorname{S} = \sqrt{n}\frac{\sum_{i=1}^N (x_i - \mu)^3}{\left(\sum_{i=1}^N (x_i - \mu)^2\right)^{3/2}}
-    ''')
-    container.markdown("Trong trường hợp muốn tính độ lệch skewness mẫu hiệu chỉnh ")
-    container.latex(r'''
-    \operatorname{S} = \frac{n\sqrt{n-1}}{n-2}\frac{\sum_{i=1}^N (x_i - \mu)^3}{\left(\sum_{i=1}^N (x_i - \mu)^2\right)^{3/2}}
-    ''')
-    input4 = st.text_input("Ví dụ skewness:",placeholder="Vd:1,2,4,2,5")
-    values4 = input4.split(',')
-    numeric_values4 = []
-    for value4 in values4:
-        value4 = value4.strip()
-        if value4:
-            numeric_values4.append(float(value4))
-    series4 = pd.Series(numeric_values4)
-    skewness = series4.skew()
-    if input4:
-        container.markdown(f"Giá trị skewness: <span style='color:green;'>{skewness}</span>", unsafe_allow_html=True)
-
-    container.markdown("---")
-    
-    container.write("#### Đặc trưng thống kê mẫu nhiều chiều ####")
-    container.markdown(
-                """
-                <style>
-                .c {
-                    margin-top: 30px ;
-                    }
-                </style>
-
-                <div class="c"></div>
-                """,
-                unsafe_allow_html=True
-            )
-    col1,col2 = st.columns(2)
-    with col1:
-        col1.markdown("###### Ma trận hiệp phương sai ######")
-        col1.dataframe(data.cov(),use_container_width=True)
-    with col2:
-        col2.markdown("######  Ma trận hệ số tương quan ######")
-        col2.dataframe(data.corr(),use_container_width=True)
-    container.markdown("#### Hiệp phương sai và hệ số tương quan ####")
-    container.markdown("Ma trận hiệp phương sai là một ma trận đại diện cho phương sai của các biến ngẫu nhiên trong một tập dữ liệu đa chiều.")
-    container.markdown("Ma trận hệ số tương quan là một phiên bản chuẩn hóa của ma trận hiệp phương sai. Nó cũng đại diện cho mối quan hệ giữa các biến trong tập dữ liệu đa chiều, nhưng thay vì hiển thị phương sai, nó hiển thị tương quan giữa các biến. Ma trận này được tính bằng cách chia mỗi phần tử trong ma trận hiệp phương sai cho tích của căn bậc hai của phương sai của hai biến tương ứng.")
-    container.markdown("Công thức ma trận hiệp phương sai với phương sai mẫu hiệu chỉnh: ")
-    container.latex(r'''
-    \mathbf{S} = \frac{1}{n-1}(\mathbf{X}-\boldsymbol{\bar{X}})^T(\mathbf{X}-\boldsymbol{\bar{X}}) = 
-        \begin{bmatrix}
-            s_{11} & s_{12} & \cdots & s_{1n} \\
-            s_{21} & s_{22} & \cdots & s_{2n} \\
-            \vdots & \vdots & \ddots & \vdots \\
-            s_{n1} & s_{n2} & \cdots & s_{nn}
-        \end{bmatrix}
-
-    ''')
-    container.latex(r'''
-    \text{Trong đó } s_{ij} = \frac{1}{n-1} \sum_{k=1}^{n} (x_{ki} - \bar{x_i})(x_{kj} - \bar{x_j})
-    ''')
-    container.markdown("Công thức hệ số tương quan: ")
-    container.latex(r'''
-    r_{XY} = \frac{\operatorname{cov}(X,Y)}{\sigma_X \sigma_Y}
-    ''')
-    container.markdown("ví dụ hiệp phương sai và hệ số tương quan: ")
-    col1, col2 =st.columns(2)
-    with col1:
-        input5 = st.text_input("Input 1:", placeholder="Example: 1,2,3,4,5")
-    with col2:
-        input6 = st.text_input("Input 2:", placeholder="Example: 2,4,6,8,10")
-    values5 = input5.split(',')
-    numeric_values5 = []
-    for value5 in values5:
-        value5 = value5.strip()
-        if value5:
-            numeric_values5.append(float(value5))
-    
-    values6 = input6.split(',')
-    numeric_values6 = []
-    for value6 in values6:
-        value6 = value6.strip()
-        if value6:
-            numeric_values6.append(float(value6))
-    
-    series5 = pd.Series(numeric_values5)
-    series6 = pd.Series(numeric_values6)
-    
-    covariance = series5.cov(series6)
-    correlation = series5.corr(series6)
-    
-    if input5 and input6:
-        st.markdown(f"Giá trị hiệp phương sai: <span style='color:green;'>{covariance}</span>", unsafe_allow_html=True)
-        st.markdown(f"Giá trị hệ số tương quan: <span style='color:green;'>{correlation}</span>", unsafe_allow_html=True)
-
-    container.markdown("---")
     footer()
 
 
 #### Data viusualyzation
-def create_chart(chart_type, data):
-    col1,col2 = st.columns(2)
-    if chart_type == "Bar":
-        
-        st.header("Bar Chart")
-        with col1:
-            x_column = st.selectbox("Chọn trục X", data.columns)
-        with col2:
-            y_column = st.selectbox("Chọn trục Y", data.columns)
-        fig = px.bar(data, x=x_column, y=y_column,color = x_column)
-        st.plotly_chart(fig,theme=None, use_container_width=True)
 
-    elif chart_type == "Line":
-        st.header("Line Chart")
-        multiple = st.checkbox("Vẽ nhiều đường", value=False)
-        col1,col2 = st.columns(2)
-        with col1:
-            x_column = st.selectbox("Chọn trục X", data.columns)
-
-        if multiple:
-            container = st.empty()
-            number = container.number_input("Nhập số lượng đường", min_value=1, step=1, value=1)
-            with col2:
-                y_columns = []
-                for i in range(number):
-                    with col2:
-                        y_column = st.selectbox(f"Chọn trục Y {i+1}", data.columns)
-                        y_columns.append(y_column)
-
-    # Create line chart with multiple lines
-            fig = px.line(data, x=x_column, y=y_columns, markers=True)
-
-        else:
-            with col2:
-                y_column = st.selectbox("Chọn trục Y", data.columns)
-
-        # Create line chart with single line
-            fig = px.line(data, x=x_column, y=y_column, markers=True)
-
-        st.plotly_chart(fig,theme=None, use_container_width=True)
-
-    elif chart_type == "Scatter":
-
-        st.header("Scatter Chart")
-        col1,col2 = st.columns(2)
-        with col1:
-            x_column = st.selectbox("Chọn trục X", data.columns)
-        with col2:
-            y_column = st.selectbox("Chọn trục Y", data.columns)
-        fig = px.scatter(data, x=x_column, y=y_column,color=x_column)
-        st.plotly_chart(fig,theme=None, use_container_width=True)
-
-    elif chart_type == "Pie":
-
-        st.header("Biểu đồ tròn")
-        col1,col2 = st.columns(2)
-        with col1:
-            x_column = st.selectbox("Chọn nhãn", data.columns)
-        with col2:
-            y_column = st.selectbox("Chọn giá trị", data.columns)
-        donut = st.checkbox('Sử dụng donut', value=True)
-        if donut:
-        # compute and show the sample statistics
-            hole = 0.4
-   
-        else:
-         # compute and show the population statistics
-            hole = 0
-        fig = px.pie(data,names = x_column,values = y_column,hole=hole)
-        st.plotly_chart(fig,theme=None, use_container_width=True)
-    
-    elif chart_type == "Boxplot":
-        st.header("Biểu đồ Hộp")
-        col1,col2 = st.columns(2)
-        with col1:
-            x_column = st.selectbox("Chọn trục X", data.columns)
-        with col2:
-            y_column = st.selectbox("Chọn trục Y", data.columns)
-
-        fig = px.box(data,x = x_column,y = y_column, )
-        st.plotly_chart(fig,theme=None, use_container_width=True)
 
 
 
@@ -553,13 +231,13 @@ def hypothesis_test(test_type, data):
     
     ######
     if test_type =="Kiểm định một mẫu":
-        container.markdown("---")
-        container.write("#### Chọn phương thức kiểm định một mẫu mong muốn ####")
+        st.markdown("---")
+        st.write("#### Chọn phương thức kiểm định một mẫu mong muốn ####")
         test_type_one = st.selectbox("", ["Kiểm định về giá trị trung bình", "Kiểm định về phương sai"])
         if test_type_one=="Kiểm định về giá trị trung bình":
-            container.markdown("---")
-            container.write("#### Kiểm định về giá trị trung bình ####")
-            container.markdown(
+            st.markdown("---")
+            st.write("#### Kiểm định về giá trị trung bình ####")
+            st.markdown(
                 """
                 <style>
                 .c {
@@ -571,7 +249,7 @@ def hypothesis_test(test_type, data):
                 """,
                 unsafe_allow_html=True
             )
-            container.write("##### Chọn cột cần kiểm định #####")
+            st.write("##### Chọn cột cần kiểm định #####")
             numeric_columns = data.select_dtypes(include=["int", "float"]).columns
             x_column = st.selectbox("", numeric_columns)
             stats_df = pd.DataFrame({
@@ -580,11 +258,11 @@ def hypothesis_test(test_type, data):
                 "Count": [data[x_column].count()]
             })
                 
-            container.markdown("Giá trị thống kê tính được")
+            st.markdown("Giá trị thống kê tính được")
             reset_df=stats_df.set_index("Mean",drop=True)
-            container.dataframe(reset_df,use_container_width=True)
+            st.dataframe(reset_df,use_st_width=True)
 
-            container.markdown("Các yếu tố: ")
+            st.markdown("Các yếu tố: ")
             col1, col2, col3 = st.columns(3)
             with col1:
                 clevel = st.text_input('Mức ý nghĩa', '0.05')
@@ -596,11 +274,11 @@ def hypothesis_test(test_type, data):
             
             sample = data[x_column].values
             alpha = float(clevel)
-            container.markdown("---")   
+            st.markdown("---")   
             
 
             if a0.strip():  # Check if a0 is not empty or whitespace
-                container.markdown("###### Bài toán kiểm định giả thuyết:")
+                st.markdown("###### Bài toán kiểm định giả thuyết:")
                 col1, col2, col3 = st.columns(3)
                 with col2:
                     if H1 == "Khác":
@@ -631,17 +309,17 @@ def hypothesis_test(test_type, data):
                         \right.
                         ''')
                 a0_value = float(a0)
-                container.markdown("Thống kê phù hợp t:")
-                container.latex(r'''
+                st.markdown("Thống kê phù hợp t:")
+                st.latex(r'''
                 t=\dfrac{(\overline{x}-\mu)\sqrt{n}}{s_d}
                 ''')
-                container.latex(r'''\text{Ta có: }
+                st.latex(r'''\text{Ta có: }
                 t \sim t_{n-1}
                 ''')
 
                 if H1 == "Khác":
                     t_statistic, p_value= stats.ttest_1samp(sample, popmean=a0_value)
-                    container.markdown(f"Giá trị $$t$$ tính được là: <span style='color: green'> $$t = {t_statistic}$$</span>", unsafe_allow_html=True)
+                    st.markdown(f"Giá trị $$t$$ tính được là: <span style='color: green'> $$t = {t_statistic}$$</span>", unsafe_allow_html=True)
                     percent=stats.t.ppf(q=1-alpha/2, df=data[x_column].count()-1)
                     t_critical_1 = t.ppf(alpha / 2, data[x_column].count()-1)
                     t_critical_2 = t.ppf(1 - alpha / 2, data[x_column].count()-1)
@@ -680,7 +358,7 @@ def hypothesis_test(test_type, data):
                                 mode="lines", name="Right Tail Area", line=dict(color="red", dash="dash")))
 
                     # Display the plot
-                    st.plotly_chart(fig,theme=None, use_container_width=True)
+                    st.plotly_chart(fig,theme=None, use_st_width=True)
                     
                     
 
@@ -730,7 +408,7 @@ def hypothesis_test(test_type, data):
                                 mode="lines", name="Critical Region", line=dict(color="red", dash="dash")))
 
 
-                    st.plotly_chart(fig, theme=None, use_container_width=True)
+                    st.plotly_chart(fig, theme=None, use_st_width=True)
                     inf = r"\infty"
                     hop = r"\cup"
                     st.markdown("##### Kết luận")
@@ -774,7 +452,7 @@ def hypothesis_test(test_type, data):
                     fig.add_trace(go.Scatter(x=[t_critical, t_critical], y=[0, stats.t.pdf(t_critical, df=data[x_column].count()-1)],
                                 mode="lines", name="Critical Region", line=dict(color="red", dash="dash")))
 
-                    st.plotly_chart(fig, theme=None, use_container_width=True)
+                    st.plotly_chart(fig, theme=None, use_st_width=True)
                     inf = r"\infty"
                     hop = r"\cup"
                     st.markdown("##### Kết luận")
@@ -790,7 +468,7 @@ def hypothesis_test(test_type, data):
 
         #
         if test_type_one=="Kiểm định về phương sai":
-            container.write("#### Kiểm định về phương sai ####")
+            st.write("#### Kiểm định về phương sai ####")
             numeric_columns = data.select_dtypes(include=["int", "float"]).columns
             x_column = st.selectbox("Chọn cột cần kiểm định ", numeric_columns)
             stats_df = pd.DataFrame({
@@ -798,10 +476,10 @@ def hypothesis_test(test_type, data):
                     "Count": [data[x_column].count()]
                 })
                     
-            container.markdown("Giá trị thống kê tính được")
+            st.markdown("Giá trị thống kê tính được")
             reset_df = stats_df.set_index("Variance", drop=True)
-            container.dataframe(reset_df, use_container_width=True)
-            container.markdown("Các yếu tố: ")
+            st.dataframe(reset_df, use_st_width=True)
+            st.markdown("Các yếu tố: ")
             col1, col2 = st.columns(2)
             with col1:
                 clevel = st.text_input('Mức ý nghĩa', '0.05')
@@ -811,10 +489,10 @@ def hypothesis_test(test_type, data):
 
             sample = data[x_column].values
             alpha = float(clevel)
-            container.markdown("---")   
+            st.markdown("---")   
 
             if a0.strip():  # Check if a0 is not empty or whitespace
-                container.markdown("###### Bài toán kiểm định giả thuyết:")
+                st.markdown("###### Bài toán kiểm định giả thuyết:")
                 col1, col2,col3 = st.columns(3)
                 with col2:
                     st.latex(r'''
@@ -829,11 +507,11 @@ def hypothesis_test(test_type, data):
                 
 
                 a0_value = float(a0)
-                container.markdown("Thống kê phù hợp chi-square:")
-                container.latex(r'''
+                st.markdown("Thống kê phù hợp chi-square:")
+                st.latex(r'''
                 \chi^2 = (n-1) \cdot \frac{{s^2}}{{\sigma_0^2}}
                 ''')
-                container.latex(r'''\text{Ta có: }
+                st.latex(r'''\text{Ta có: }
                 \chi^2 \sim \chi^2_{n-1}
                 ''')
                 
@@ -875,22 +553,22 @@ def hypothesis_test(test_type, data):
                                 mode="lines", name="Right Tail Area", line=dict(color="red", dash="dash")))
                 
                 fig.update_layout(showlegend=False)
-                st.plotly_chart(fig,theme=None, use_container_width=True)
+                st.plotly_chart(fig,theme=None, use_st_width=True)
                 
                 if chi2_statistic > chi2_critical or chi2_statistic < chi2_critical2:
-                    container.markdown(":red[Không chấp nhận null hypothesis]")
-                    container.markdown("Có bằng chứng đủ để bác bỏ giả thuyết H0.")
+                    st.markdown(":red[Không chấp nhận null hypothesis]")
+                    st.markdown("Có bằng chứng đủ để bác bỏ giả thuyết H0.")
                 else:
-                    container.markdown(":green[Chấp nhận null hypothesis]")
-                    container.markdown("Không có bằng chứng đủ để bác bỏ giả thuyết H0.")
+                    st.markdown(":green[Chấp nhận null hypothesis]")
+                    st.markdown("Không có bằng chứng đủ để bác bỏ giả thuyết H0.")
     if test_type =="Kiểm định nhiều mẫu":
-        container.markdown("---")
-        container.write("#### Chọn phương thức kiểm định nhiều mẫu mong muốn ####")
+        st.markdown("---")
+        st.write("#### Chọn phương thức kiểm định nhiều mẫu mong muốn ####")
         test_type_two = st.selectbox("", ["So sánh hai giá trị trung bình", "So sánh hai phương sai", "Phân tích phương sai"])
         if test_type_two=="So sánh hai giá trị trung bình":
-            container.markdown("---")
-            container.write("#### So sánh hai giá trị trung bình ####")
-            container.markdown(
+            st.markdown("---")
+            st.write("#### So sánh hai giá trị trung bình ####")
+            st.markdown(
                 """
                 <style>
                 .c {
@@ -902,7 +580,7 @@ def hypothesis_test(test_type, data):
                 """,
                 unsafe_allow_html=True
             )
-            container.write("##### Chọn các cột cần so sánh #####")
+            st.write("##### Chọn các cột cần so sánh #####")
             numeric_columns = data.select_dtypes(include=["int", "float"]).columns
             col1, col2  = st.columns(2)
             with col1:
@@ -914,10 +592,10 @@ def hypothesis_test(test_type, data):
                 "Mẫu 2": [data[y_column].mean(), data[y_column].std(), data[y_column].count()]
             }, index=["Mean", "Standard Deviation", "Count"])
                 
-            container.markdown("Giá trị thống kê tính được")
-            container.dataframe(stats_df, use_container_width=True)
+            st.markdown("Giá trị thống kê tính được")
+            st.dataframe(stats_df, use_st_width=True)
 
-            container.markdown("Các yếu tố: ")
+            st.markdown("Các yếu tố: ")
             col1, col2  = st.columns(2)
             with col1:
                 clevel = st.text_input('Mức ý nghĩa', '0.05')
@@ -926,11 +604,11 @@ def hypothesis_test(test_type, data):
             
             
             alpha = float(clevel)
-            container.markdown("---")   
+            st.markdown("---")   
             
 
             if a0.strip():  # Check if a0 is not empty or whitespace
-                container.markdown("###### Bài toán kiểm định giả thuyết:")
+                st.markdown("###### Bài toán kiểm định giả thuyết:")
                 col1, col2, col3 = st.columns(3)
                 with col2:
                         st.latex(r'''
@@ -943,19 +621,19 @@ def hypothesis_test(test_type, data):
                         ''')
                 
                 a0_value = float(a0)
-                container.markdown("Thống kê phù hợp t:")
+                st.markdown("Thống kê phù hợp t:")
                 if data[x_column].count() > 30:
-                    container.latex(r'''
+                    st.latex(r'''
                     t=\frac{{\overline{x_1} - \overline{x_2}-(\mu_1 -\mu_2)}}{\sqrt{\frac{{s_1^2}}{{n_1}}+\frac{s_2^2}{{n_2}}}}
                     ''')
-                    container.latex(r'''\text{Ta có: }
+                    st.latex(r'''\text{Ta có: }
                     t \sim t_{min{(n_1-1, n_2-1)}}
                     ''')
                 else:
-                    container.latex(r'''
+                    st.latex(r'''
                     t=\frac{{\overline{x_1} - \overline{x_2}-(\mu_1 -\mu_2)}}{{\sqrt{\frac{{(n_1-1)s_1^2+(n_2-1)s_2^2}}{{n_1+n_2-2}}(\frac{{1}}{{n_1}}+\frac{1}{{n_2}})}}}
                     ''')
-                    container.latex(r'''\text{Ta có: }
+                    st.latex(r'''\text{Ta có: }
                     t \sim t_{n_1+n_2-2}
                     ''')
                 t_statistic2 = (data[x_column].mean() - data[y_column].mean() - a0_value) / (math.sqrt((((data[x_column].count()-1)*data[x_column].var()+(data[y_column].count()-1)*data[y_column].var())/((data[x_column].count()+data[y_column].count()-2)))*(1/(data[x_column].count())+1/data[y_column].count())))
@@ -997,9 +675,9 @@ def hypothesis_test(test_type, data):
                                 mode="lines", name="Right Tail Area", line=dict(color="red", dash="dash")))
 
                     # Display the plot
-                st.plotly_chart(fig,theme=None, use_container_width=True)
+                st.plotly_chart(fig,theme=None, use_st_width=True)
         if test_type_two =="So sánh hai phương sai":
-            container.write("#### So sánh hai phương sai ####")
+            st.write("#### So sánh hai phương sai ####")
             numeric_columns = data.select_dtypes(include=["int", "float"]).columns
             col1,col2 = st.columns(2)
             with col1:
@@ -1011,10 +689,10 @@ def hypothesis_test(test_type, data):
                 "Mẫu 2": [ data[y_column].var(), data[y_column].count()]
             }, index=["Variance", "Count"])
 
-            container.markdown("Giá trị thống kê tính được")
-            container.dataframe(stats_df, use_container_width=True)
+            st.markdown("Giá trị thống kê tính được")
+            st.dataframe(stats_df, use_st_width=True)
 
-            container.markdown("Các yếu tố: ")
+            st.markdown("Các yếu tố: ")
             col1, col2 = st.columns(2)
             with col1:
                 clevel = st.text_input('Mức ý nghĩa', '0.05')
@@ -1024,10 +702,10 @@ def hypothesis_test(test_type, data):
 
             sample = data[x_column].values
             alpha = float(clevel)
-            container.markdown("---")   
+            st.markdown("---")   
 
             if H1=="Khác":  # Check if a0 is not empty or whitespace
-                container.markdown("###### Bài toán kiểm định giả thuyết:")
+                st.markdown("###### Bài toán kiểm định giả thuyết:")
                 col1, col2,col3 = st.columns(3)
                 with col2:
                     st.latex(r'''
@@ -1039,11 +717,11 @@ def hypothesis_test(test_type, data):
                     \right.
                     ''')
                 
-                container.markdown("Thống kê phù hợp chi-square:")
-                container.latex(r'''
+                st.markdown("Thống kê phù hợp chi-square:")
+                st.latex(r'''
                 F = \frac{{s_1^2 \sigma_2^2}}{{s_2^2 \sigma_1^2}}
                 ''')
-                container.latex(r'''\text{Ta có: }
+                st.latex(r'''\text{Ta có: }
                 F \sim F_{n_1-1,n_2-1}
                 ''')
                 
@@ -1085,12 +763,12 @@ def hypothesis_test(test_type, data):
                                 mode="lines", name="Right Tail Area", line=dict(color="red", dash="dash")))
                 
                 fig.update_layout(showlegend=False)
-                st.plotly_chart(fig,theme=None, use_container_width=True)
+                st.plotly_chart(fig,theme=None, use_st_width=True)
 
         if test_type_two =="Phân tích phương sai":
-            container.write("#### ANOVA Test ####")
+            st.write("#### ANOVA Test ####")
 
-            container.write("##### Chọn các cột cho ANOVA #####")
+            st.write("##### Chọn các cột cho ANOVA #####")
             numeric_columns = data.select_dtypes(include=["int", "float"]).columns
             col1,col2 = st.columns([3,1])
             with col1:
@@ -1119,8 +797,8 @@ def hypothesis_test(test_type, data):
                             "Count": series_data[i].count()
                         }, ignore_index=True)
                     # Display the column summaries in Streamlit
-                    container.write("#### Giá trị thống kê tính được ####")
-                    container.dataframe(summary_table, use_container_width=True)
+                    st.write("#### Giá trị thống kê tính được ####")
+                    st.dataframe(summary_table, use_st_width=True)
                     f_statistic, p_value = stats.f_oneway(*series_data)
                     within_squares = sum(sum((series - series.mean())**2) for series in series_data)
                     overall_mean = pd.Series(selected_data.values.flatten()).dropna().mean()
@@ -1159,8 +837,8 @@ def hypothesis_test(test_type, data):
                     })
 
                     # Display the ANOVA table in Streamlit
-                    container.write("#### Bảng ANOVA ####")
-                    container.dataframe(anova_table, use_container_width=True)
+                    st.write("#### Bảng ANOVA ####")
+                    st.dataframe(anova_table, use_st_width=True)
 
                     F_critical = stats.f.ppf(1 - alpha , (len(series_data) - 1),sum(len(series) - 1 for series in series_data))
                     
@@ -1193,16 +871,16 @@ def hypothesis_test(test_type, data):
                     
                     
                     fig.update_layout(showlegend=False)
-                    st.plotly_chart(fig,theme=None, use_container_width=True)
+                    st.plotly_chart(fig,theme=None, use_st_width=True)
                 else:
-                    container.write("Insufficient data points after preprocessing. Please select columns with valid numeric values.")
+                    st.write("Insufficient data points after preprocessing. Please select columns with valid numeric values.")
             else:
-                container.write("Please select at least two columns for the ANOVA test.")
+                st.write("Please select at least two columns for the ANOVA test.")
 
 
     if test_type =="Kiểm định phi tham số":
-        container.markdown("---")
-        container.write("#### Chọn phương thức kiểm định mong muốn ####")
+        st.markdown("---")
+        st.write("#### Chọn phương thức kiểm định mong muốn ####")
         test_type_three = st.selectbox("", ["Kiểm định phân phối chuẩn"])
         if test_type_three == "Kiểm định phân phối chuẩn":
             numeric_columns = data.select_dtypes(include=["int", "float"]).columns
@@ -1237,9 +915,9 @@ def hypothesis_test(test_type, data):
             # Display the QQ plot
             
             
-            container.plotly_chart(qq_fig,theme = None, use_container_width=True)
+            st.plotly_chart(qq_fig,theme = None, use_st_width=True)
             
-            container.write(np.corrcoef(sort_col, theoretical_quantiles))
+            st.write(np.corrcoef(sort_col, theoretical_quantiles))
 
 
         
@@ -1247,21 +925,19 @@ def hypothesis_test(test_type, data):
 # main function
 def main():
 
-    image = Image.open("logo_app.png")
     with st.sidebar:
-        st.sidebar.image(image,width = 250)
         st.sidebar.markdown("---")
         st.markdown("#### Chọn chức năng ####")
-        selected = option_menu(None, ["Dữ liệu", "Thống kê", "Trực quan hóa","Kiểm định","Hoi quy"], 
-            icons=['clipboard-data', 'table', "bar-chart-fill", 'clipboard-check'], 
+        selected = option_menu(None, ["Dữ liệu", "Thống kê", "Trực quan hóa", "Hồi quy", "Phân lớp","Phân cụm"], 
+            icons=['clipboard-data', 'table', "bar-chart-fill", 'rulers', 'diamond-half'], 
             menu_icon="cast", default_index=0,styles={
-                                   "container": {"padding": "5!important", "background-color": "#fafafa"},
+                                   "st": {"padding": "5!important", "background-color": "#fafafa"},
                                    "icon": {"color": "black", "font-size": "15px"},
                                    "nav-link": {"font-size": "15px", "text-align": "left", "margin": "0px",
                                                 "--hover-color": "#eee"},
                                    })
 
-    with container:
+    with st.container():
         with st.sidebar:
             st.sidebar.markdown("---")
             st.markdown("#### Tải lên dữ liệu ####")
@@ -1273,7 +949,7 @@ def main():
 
             if selected =='Dữ liệu':
                 search()
-                info(data)
+                Info.info(data)
 
             if selected == 'Thống kê':
                 search()
@@ -1281,149 +957,78 @@ def main():
 
             if selected =='Trực quan hóa':
                 search()
-                container.write(" # Trực quan hóa dữ liệu # ")
-                container.write("#### Dữ liệu ####")
-                container.write("Data")
-                edit_data= container.experimental_data_editor(data,use_container_width=True,num_rows="dynamic")
-                container.markdown("---")
-                container.write("#### Chọn loại biểu đồ ####")
-                chart_type = st.selectbox("", ["Bar", "Line", "Scatter","Pie","Boxplot"])
+                st.write(" # Trực quan hóa dữ liệu # ")
+                st.write("#### Dữ liệu ####")
+                st.write("Data")
+                edit_data= st.experimental_data_editor(data,use_container_width=True,num_rows="dynamic")
+                st.markdown("---")
+                st.write("#### Chọn loại biểu đồ ####")
+                chart_type = st.selectbox("", ["Bar"])
 
-                create_chart(chart_type, edit_data)
-
-            if selected =='Kiểm định':
-                search()
-                container.write(" # Kiểm định giả thuyết thống kê # ")
-                container.write("#### Dữ liệu ####")
-                container.write("Data")
-                edit_data= container.experimental_data_editor(data,use_container_width=True,num_rows="dynamic")
-                container.markdown("---")
-                container.write("#### Chọn phương thức muốn kiểm định ####")
-                test_type = st.selectbox("", [None,"Kiểm định một mẫu", "Kiểm định nhiều mẫu", "Kiểm định phi tham số"])
-                hypothesis_test(test_type, edit_data)
-        else:
-            
-            with container:
-                with st.spinner(text="Building line"):
-                        with open('timeline.json', "r",encoding="utf-8") as f:
-                            data = f.read()
-                            timeline(data, height=450, )
-            container.markdown("---")
-           
-            st.markdown(
-                """
-                <style>
-                .b {
-                    margin-top: 50px ;
-                    }
-                </style>
-
-                <div class="b"></div>
-                """,
-                unsafe_allow_html=True
-            )
-
-            st.markdown(" ### Làm sao để sử dụng ?")
-            st.markdown(
-                """
-                <style>
-                .b {
-                    margin-top: 50px ;
-                    }
-                </style>
-
-                <div class="b"></div>
-                """,
-                unsafe_allow_html=True
-            )
-
-            col1,col2=st.columns(2)
-            with col1:
-                st.markdown("""
-                        <head>
-                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                        </head>
-                        <body>
-
-                        <i class="fa-solid fa-1 fa-beat" style="font-size:70px;color: #ff4b4b;"></i>
-                        <h5>Tải lên dữ liệu của bạn</h5>
-                        </body>
-                                            
-                        
-                        """, unsafe_allow_html=True)
-                image1 = Image.open("image/im1.png")
-                st.image(image1)
-
-                st.markdown(
-                """
-                <style>
-                .b {
-                    margin-top: 50px ;
-                    }
-                </style>
-
-                <div class="b"></div>
-                """,
-                unsafe_allow_html=True
-            )
-                st.markdown("""
-                        <head>
-                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                        </head>
-                        <body>
-
-                        <i class="fa-solid fa-3 fa-beat" style="font-size:70px;color: #ff4b4b;"></i>
-                        <h5>Bắt đầu tính toán </h5>
-                        </body>
-                                            
-                        
-                        """, unsafe_allow_html=True)
-                image3 = Image.open("image/im3.png")
-                st.image(image3)
+                Chart.create_chart(chart_type, edit_data)
                 
-            with col2:
-                st.markdown("""
-                        <head>
-                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                        </head>
-                        <body>
+            if selected == 'Hồi quy':
+                search()
+                
+                st.write(" # Hồi quy tuyến tính # ")
+                st.write("#### Dữ liệu ####")
+                st.write("Data")
+                edit_data= st.experimental_data_editor(data,use_container_width=True,num_rows="dynamic")
+                st.markdown("---")
+                regression_type = st.selectbox("", ["Hồi quy một biến", 'Hồi quy đa biến'])
+                if regression_type =="Hồi quy một biến":
+                    Regression.simple_linear_regresstion(data)
+                if regression_type == "Hồi quy đa biến":
+                    Regression.multiple_linear_regression(data)
+                    
+            if selected == 'Phân lớp':
+                search()
+                st.write(" # Phân lớp # ")
+                st.write("#### Dữ liệu ####")
+                st.write("Data")
+                edit_data= st.experimental_data_editor(data,use_container_width=True,num_rows="dynamic")
+                st.markdown("---")
+                class_type = st.selectbox("", ["KNN", 'Logistic Regression', 'Random Forest', 'Naive Bayes', 'SVM'])
+                if class_type == 'KNN':
+                    Classification.knn_classification(data)
+                if class_type == 'Logistic Regression':
+                    Classification.lgreg_classification(data)
+                if class_type == 'Random Forest':
+                    Classification.randomfor_classification(data)
+                if class_type == 'Naive Bayes':
+                    Classification.naivebayes_classification(data)
+                if class_type == 'SVM':
+                    Classification.svm_classification(data)
+                
+            
+            if selected == 'Phân cụm':
+                search()
+                st.write(" # Phân cụm # ")
+                st.write("#### Dữ liệu ####")
+                st.write("Data")
+                edit_data= st.experimental_data_editor(data,use_container_width=True,num_rows="dynamic")
+                st.markdown("---")
+                Clustering.kmeans_clustering(data)
+                
 
-                        <i class="fa-solid fa-2 fa-beat" style="font-size:70px;color: #ff4b4b;"></i>
-                        <h5>Chọn chức năng mong muốn</h5>
-                        </body>
-                                            
-                        
-                        """, unsafe_allow_html=True)
-                image2 = Image.open("image/im2.png")
-                st.image(image2)
-                st.markdown(
-                """
-                <style>
-                .b {
-                    margin-top: 50px ;
-                    }
-                </style>
-
-                <div class="b"></div>
-                """,
-                unsafe_allow_html=True
-            )
-                st.markdown("""
-                        <head>
-                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-                        </head>
-                        <body>
-
-                        <i class="fa-solid fa-4 fa-beat" style="font-size:70px;color: #ff4b4b;"></i>
-                        <h5>Tải xuống và tiếp tục công việc</h5>
-                        </body>
-                                            
-                        
-                        """, unsafe_allow_html=True)
-                image4 = Image.open("image/im4.png")
-                st.image(image4)
-            container.markdown("---")
-            footer()
+            # if selected =='Kiểm định':
+            #     search()
+            #     st.write(" # Kiểm định giả thuyết thống kê # ")
+            #     st.write("#### Dữ liệu ####")
+            #     st.write("Data")
+            #     edit_data= st.experimental_data_editor(data,use_st_width=True,num_rows="dynamic")
+            #     st.markdown("---")
+            #     st.write("#### Chọn phương thức muốn kiểm định ####")
+            #     test_type = st.selectbox("", [None,"Kiểm định một mẫu", "Kiểm định nhiều mẫu", "Kiểm định phi tham số"])
+            #     hypothesis_test(test_type, edit_data)
+        else:
+            st.balloons()
+            st.markdown(
+        """
+        <h1>Trang chủ</h1>
+        """,
+        unsafe_allow_html=True,
+)
             
     
 if __name__ == "__main__":
